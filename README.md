@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # ApiWeb
 Desarrollo e implementación de una API Web con JS
 =======
@@ -24,4 +23,3 @@ El servidor corre en http://localhost:3000
 | DELETE | /productos/:id    | **Por completar** |
 
 Lee el documento de la práctica para ver los requisitos de cada método.
->>>>>>> 3b1a5bc (Initial commit)
