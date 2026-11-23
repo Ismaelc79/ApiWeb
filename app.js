@@ -43,24 +43,31 @@ app.get('/productos/:id', (req, res) => {
 
 
 // ============================================================
-// PRÁCTICA 6: Completa los siguientes métodos de la API
+// PRÁCTICA 6
 // ============================================================
 
-// TODO: POST /productos - Crear nuevo producto
+// POST /productos - Crear nuevo producto
 app.post('/productos', (req, res) => {
     const { nombre, descripcion, precio } = req.body
-    const precioNum = parseFloat(req.body.precio)
 
-    if (!nombre || !descripcion || !precio) {
-        return res.status(400).json({ mensaje: 'Datos del producto son requeridos' })
+    //Se utiliza undefined para que precio 0 pase a la siguiente validación
+    if (!nombre || !descripcion || precio === undefined) {
+        return res.status(400).json({ mensaje: 'Los campos nombre, descripcion y precio son obligatorios' })
     }
 
-    if(precioNum <= 0){
-        return res.status(400).json({ mensaje: 'El precio debe ser mayor a 0' })
+    //Se convierte precio a Float
+    const precioNum = parseFloat(precio)
+
+    //Se valida el precio, no puede ser "abc" (no un número) o menor a 0
+    if (isNaN(precioNum) || precioNum <= 0) {
+        return res.status(400).json({ mensaje: 'El precio debe ser un número mayor a 0' })
     }
+
+    // id = mayor id existente + 1 (productos.length + 1 puede repetir ids tras un DELETE)
+    const nuevoId = productos.length > 0 ? Math.max(...productos.map(p => p.id)) + 1 : 1
 
     const nuevoProducto = {
-        id: productos.length + 1,
+        id: nuevoId,
         nombre,
         descripcion,
         precio: precioNum
@@ -68,37 +75,12 @@ app.post('/productos', (req, res) => {
 
     productos.push(nuevoProducto)
 
+    //Responde 201 y devuelve el nuevo producto
     res.status(201).json(nuevoProducto)
 })
 
-// TODO: PUT /productos/:id - Actualizar producto
+// PUT /productos/:id - Actualizar producto (reemplazo completo, mismo id)
 app.put('/productos/:id', (req, res) => {
-    const id = parseInt(req.params.id)
-    const producto = productos.findIndex(p => p.id === id)
-
-    if (producto === -1) {
-        return res.status(404).json({ mensaje: 'Producto no encontrado' })
-    }
-
-    if (!nombre || !descripcion || !precio) {
-        return res.status(400).json({ mensaje: 'Datos del producto son requeridos' })
-    }
-
-    if(precio <= 0){
-        return res.status(400).json({ mensaje: 'El precio debe ser mayor a 0' })
-    }
-
-    const { nombre, descripcion, precio } = req.params
-
-    if (nombre) producto.nombre = nombre
-    if (descripcion) producto.descripcion = descripcion
-    if (precio) producto.precio = precio
-
-    res.status(200).json(producto)
-})
-
-// TODO: DELETE /productos/:id - Eliminar producto
-app.delete('/productos/:id', (req, res) => {
     const id = parseInt(req.params.id)
     const index = productos.findIndex(p => p.id === id)
 
@@ -106,12 +88,41 @@ app.delete('/productos/:id', (req, res) => {
         return res.status(404).json({ mensaje: 'Producto no encontrado' })
     }
 
-    productos.splice(index, 1)
+    //Misma estructura que el POST
+    const { nombre, descripcion, precio } = req.body
 
-    const { nombre, descripcion, precio } = req.params
+    if (!nombre || !descripcion || precio === undefined) {
+        return res.status(400).json({ mensaje: 'Los campos nombre, descripcion y precio son obligatorios' })
+    }
 
-    res.json({ producto: { nombre, descripcion, precio }, mensaje: 'Producto eliminado' })
+    const precioNum = parseFloat(precio)
 
+    if (isNaN(precioNum) || precioNum <= 0) {
+        return res.status(400).json({ mensaje: 'El precio debe ser un número mayor a 0' })
+    }
+
+    //Reemplazo completo manteniendo su id
+    productos[index] = { id, nombre, descripcion, precio: precioNum }
+
+    //Respuesta 200 y el producto actualizado
+    res.status(200).json(productos[index])
+})
+
+// DELETE /productos/:id - Eliminar producto
+app.delete('/productos/:id', (req, res) => {
+    const id = parseInt(req.params.id)
+    const index = productos.findIndex(p => p.id === id)
+
+    //Validación del producto existente
+    if (index === -1) {
+        return res.status(404).json({ mensaje: 'Producto no encontrado' })
+    }
+
+    // splice devuelve un arreglo con los elementos eliminados
+    const [eliminado] = productos.splice(index, 1)
+
+    //Respuesta 200, mensaje de producto eliminado y los datos de dicho producto
+    res.status(200).json({ mensaje: 'Producto eliminado', producto: eliminado })
 })
 
 app.listen(3000, () => {
